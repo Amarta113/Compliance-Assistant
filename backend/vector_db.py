@@ -3,6 +3,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.vectorstores import Chroma
 from chromadb.config import Settings
 from chromadb import Client
+from langchain_ollama import OllamaEmbeddings
 
 pdfs_directory = "pdfs/"
 
@@ -24,9 +25,9 @@ def create_chunks(documents):
     return chunk
 
 def create_embeddings(chunks):
+    embeddings = OllamaEmbeddings(model="deepseek-r1")
+    return embeddings.embed_query(chunks.page_content)
     
-    pass
-
 def create_vectors(chunks, embeddings):
     client = Client(Settings())
     collection = client.create_collection(name="dataframe collection")
@@ -38,6 +39,12 @@ def create_vectors(chunks, embeddings):
             embeddings=[embeddings[idx]],
             ids=[str(idx)] # here we are ensuring ids are string
         )
+    retriever = collection.as_retriever()
+    return retriever
+
+def query_vectors(input_docs, policy_docs):
+    
+    pass
 
 
 
