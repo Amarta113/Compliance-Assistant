@@ -5,18 +5,15 @@ from chromadb.config import Settings
 from chromadb import Client
 from langchain_ollama import OllamaEmbeddings
 
-pdfs_directory = "pdfs/"
+pdfs_directory = "pdf/"
 
 def upload_pdf(file):
     with open(pdfs_directory + file.name, "wb") as f:
         f.write(file.getbuffer())
 
-def load_pdf(file_path):
+def load_and_chunk(file_path):
     loader = PDFPlumberLoader(file_path)
     documents = loader.load()
-    return documents
-
-def create_chunks(documents):
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=200
@@ -24,7 +21,7 @@ def create_chunks(documents):
     chunk = text_splitter.split_documents(documents)
     return chunk
 
-def create_embeddings(chunks):
+def create_embeddings(chunk):
     embeddings = OllamaEmbeddings(model="deepseek-r1")
     return embeddings.embed_query(chunks.page_content)
     
@@ -42,9 +39,6 @@ def create_vectors(chunks, embeddings):
     retriever = collection.as_retriever()
     return retriever
 
-def query_vectors(input_docs, policy_docs):
-    
-    pass
 
 
 
