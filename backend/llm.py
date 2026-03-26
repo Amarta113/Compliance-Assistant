@@ -5,15 +5,24 @@ def rag_pipeline(docs):
     retriever = setup_retriever()
     compliance_chain = create_chain(retriever)
     results = []
-    for chunk in chunks:
-        result = compliance_chain.invoke(chunk.page_content)
+    batch_size = 5
+    for i in range(0, len(chunks), batch_size):
+        batch = chunks[i:i+batch_size]
+        batch_text = "\n\n".join([c.page_content for c in batch])
+        result = compliance_chain.invoke(batch_text)
         results.append(result)
 
     violations = []
 
+    
     for r in results:
-        if not r["compliant"]:
-            violations.append(r)
+        if isinstance(r, list):  
+            for item in r:
+                if not item.get("compliant", True):
+                    violations.append(item)
+        else:  
+            if not r.get("compliant", True):
+                violations.append(r)
 
     report = {
         "total_chunks": len(results),
