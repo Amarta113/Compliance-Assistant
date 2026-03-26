@@ -2,10 +2,12 @@ from chain import create_chain, load_and_chunk, setup_retriever
 
 def rag_pipeline(docs):
     chunks = load_and_chunk(docs)
-    full_text = "\n\n".join(chunk.page_content for chunk in chunks)
     retriever = setup_retriever()
-    compliance_chain = create_chain(retriever)    
-    result = compliance_chain.invoke(full_text)
+    compliance_chain = create_chain(retriever)
+    results = []
+    for chunk in chunks:
+        result = compliance_chain.invoke(chunk.page_content)
+        results.append(result)
 
     violations = []
 
