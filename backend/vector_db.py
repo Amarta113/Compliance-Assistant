@@ -1,8 +1,6 @@
 from langchain_community.document_loaders import PDFPlumberLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_core.vectorstores import Chroma
-from chromadb.config import Settings
-from chromadb import Client
+from langchain_community.vectorstores import Chroma
 from langchain_ollama import OllamaEmbeddings
 
 pdfs_directory = "pdf/"
@@ -14,32 +12,30 @@ def upload_pdf(file):
 def load_and_chunk(file_path):
     loader = PDFPlumberLoader(file_path)
     documents = loader.load()
+
+    for i, doc in enumerate(documents):
+        doc.metadata["source"] = file_path
+        doc.metadata["page"] = i + 1
+
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200
+        chunk_size=500,
+        chunk_overlap=50
     )
     chunk = text_splitter.split_documents(documents)
     return chunk
 
-def create_embeddings(chunk):
-    embeddings = OllamaEmbeddings(model="deepseek-r1")
-    return embeddings.embed_query(chunks.page_content)
-    
-def create_vectors(chunks, embeddings):
-    client = Client(Settings())
-    collection = client.create_collection(name="dataframe collection")
-    # here we are adding docs and embedding to chromadb
-    for idx, chunk in enumerate(chunks):
-        collection.add(
-            documents=[chunk.page_content],
-            metadatas=[{"id": idx}],
-            embeddings=[embeddings[idx]],
-            ids=[str(idx)] # here we are ensuring ids are string
-        )
-    retriever = collection.as_retriever()
-    return retriever
+def create_vectors(chunks):
+    embeddings_model = OllamaEmbeddings(model="nomic-embed-text:latest")
+    vectors = Chroma.from_documents(
+        documents=chunks,
+        embedding=embeddings_model,
+        persist_directory="./backend/db")
+    print("Policy vectors stored successfully")
 
-
-
-
-
+def load_retriever():
+    embeddings_model = OllamaEmbeddings(model="nomic-embed-text:latest")
+    _vectors = Chroma(
+        embedding_function=embeddings_model,
+        persist_directory="./backend/db"
+    )
+    return _vectors.as_retriever(search_kwargs={"k": 5})
