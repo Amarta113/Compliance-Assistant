@@ -3,6 +3,7 @@ from langchain_core.output_parsers import JsonOutputParser
 from prompt import compliance_prompt
 from vector_db import create_vectors, load_and_chunk, load_retriever
 from langchain_ollama import ChatOllama
+from langchain_groq import ChatGroq
 import logging
 import os
 
@@ -13,7 +14,7 @@ def format_docs(docs):
     """Format retrieved documents for display"""
     formatted = []
     for i, doc in enumerate(docs, 1):
-        location = doc.metadata.get("source", "Unknown source")
+        location = doc.metadata.get("source","")
         page = doc.metadata.get("page", "N/A")
         formatted.append(
             f"[{i}] {location} (Page {page})\n{doc.page_content}"
@@ -21,21 +22,6 @@ def format_docs(docs):
     logger.info(f"Formatted {len(docs)} documents for context.")
     return "\n\n".join(formatted)
 
-def ingest_policy_documents(policy_pdf_path):
-    """Load policy PDF, chunk it, and store vectors in persistent database (ONE-TIME SETUP)"""
-    logger.info(f"Ingesting policy document: {policy_pdf_path}")
-    if not os.path.exists(policy_pdf_path):
-        logger.error(f"Policy file not found: {policy_pdf_path}")
-        return None
-    
-    # Load and chunk policy PDF
-    policy_chunks = load_and_chunk(policy_pdf_path)
-    logger.info(f"Loaded and chunked {len(policy_chunks)} policy chunks")
-
-    # Create and persist vectors in database
-    create_vectors(policy_chunks)
-    logger.info("Policy vectors stored successfully in persistent database")
-    return policy_chunks
 
 def load_input_document(input_pdf_path):
     """Load and chunk the INPUT research document for compliance review"""
@@ -54,23 +40,22 @@ def setup_retriever():
     return retriever
 
 def create_chain(retriever):
-    """
-    Create the compliance review chain
-    Chain flow:
-    1. Accept input document text (research_text)
-    2. Retrieve relevant POLICY docs from persistent vector DB
-    3. Format policy docs for display
-    4. Pass input + policy context to LLM for comparison
-    5. Parse JSON output with compliance gaps/findings
-    """
+    
     format_context = RunnableLambda(format_docs)
     
-    llm = ChatOllama(
+    """llm = ChatOllama(
         model="deepseek-r1:8b",
         temperature=0,
         response_format={"type": "json_object"},
     )
-    
+    """
+    llm = ChatGroq(
+        model = "llama-3.1-8b-instant",
+        temperature=0,
+        response_format={"type": "json_object"},
+        groq_api_key="your_groq_api_key_here"
+    )
+
     compliance_chain = (
         RunnableParallel({
             "research_text": RunnablePassthrough(),
@@ -78,7 +63,7 @@ def create_chain(retriever):
                 retriever
                 | format_context
             )
-        })
+        }) 
         | compliance_prompt
         | llm
         | JsonOutputParser()
