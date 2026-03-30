@@ -27,6 +27,5 @@ compliance_prompt = ChatPromptTemplate.from_template("""
             "citations": ["GA4GH Framework | Section 3 | Clause 3.2"],
             "confidence": 85
         }}
-        ]
-        """
+        ] """
         )
