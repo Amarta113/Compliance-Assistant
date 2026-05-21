@@ -19,9 +19,9 @@ The Compliance Assistant is a **Retrieval-Augmented Generation (RAG)** tool that
 ## Key Features
 
 - **Document Upload**: Simple PDF upload interface via Streamlit
-- **RAG Pipeline**: Leverages open-source LLMs (Llama 3, Mistral, DeepSeek) for intelligent analysis
+- **RAG Pipeline**: Leverages open-source LLMs (Llama 3,) for intelligent analysis
 - **Citation Support**: AI provides references to specific GA4GH policy clauses
-- **Vector Database**: Persistent FAISS-based vector store for efficient retrieval
+- **Vector Database**: Persistent ChromaDb vector store for efficient retrieval
 - **API Backend**: FastAPI integration for scalable deployments
 - **JSON Output**: Structured compliance reports for programmatic use
 
